@@ -1,7 +1,7 @@
 {
   "name": "context-pane",
   "version": "0.1.0",
-  "description": "Claude Code context window usage bar in the prompt footer, coloured by category, with a token breakdown on hover",
+  "description": "Context window usage bar for the Claude Code prompt footer",
   "author": {
     "name": "koprjaa"
   },

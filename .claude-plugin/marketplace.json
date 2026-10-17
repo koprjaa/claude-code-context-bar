@@ -1,6 +1,6 @@
 {
   "name": "context-pane",
-  "description": "Context window bar for the Claude Code prompt footer",
+  "description": "Context window usage bar for the Claude Code prompt footer",
   "owner": {
     "name": "koprjaa"
   },
