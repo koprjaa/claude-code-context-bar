@@ -1,0 +1,16 @@
+{
+  "name": "context-pane",
+  "version": "0.1.0",
+  "description": "Claude Code context window usage bar in the prompt footer, coloured by category, with a token breakdown on hover",
+  "author": {
+    "name": "koprjaa"
+  },
+  "types": "./types/index.d.ts",
+  "repository": "https://github.com/koprjaa/claude-code-context-bar",
+  "keywords": [
+    "context-window",
+    "token-usage",
+    "statusline",
+    "footer"
+  ]
+}

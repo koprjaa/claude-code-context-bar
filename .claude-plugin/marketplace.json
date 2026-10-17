@@ -1,0 +1,13 @@
+{
+  "name": "context-pane",
+  "description": "Context window bar for the Claude Code prompt footer",
+  "owner": {
+    "name": "koprjaa"
+  },
+  "plugins": [
+    {
+      "name": "context-pane",
+      "source": "./"
+    }
+  ]
+}
