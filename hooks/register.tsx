@@ -7,7 +7,7 @@ const PANE = 'context'
 const TITLE = 'Context'
 const COLS = 26
 const BAR = 20
-const FOOTER_BAR = 30
+const FOOTER_BAR = 15
 // short labels so the pane fits a narrow dock
 const SHORT: Record<string, string> = {
   'System prompt': 'System', 'System tools': 'Tools', 'Memory files': 'Memory', 'Custom agents': 'Agents',
