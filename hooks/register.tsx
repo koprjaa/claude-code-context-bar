@@ -21,14 +21,14 @@ export const fmt = (n: number) =>
   n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1000 ? `${+(n / 1000).toFixed(1)}k` : String(n)
 
 // the engine's keys are two greys (promptBorder, inactive) and *_FOR_SUBAGENTS_ONLY keys no plugin can paint,
-// so each used category gets its own colour
+// so each used category gets its own colour; mid shades, >= 3:1 against both a black and a white terminal
 const PALETTE: Record<string, string> = {
-  'System prompt': '#9ca3af', 'System tools': '#60a5fa', 'MCP server instructions': '#34d399',
-  'MCP tools': '#2dd4bf', 'Custom agents': '#f472b6', 'Memory files': '#fb923c', 'Skills': '#facc15',
-  'Messages': '#c084fc', 'Slash commands': '#22d3ee',
+  'System prompt': '#6b7280', 'System tools': '#3b82f6', 'MCP server instructions': '#059669',
+  'MCP tools': '#0d9488', 'Custom agents': '#db2777', 'Memory files': '#ea580c', 'Skills': '#d97706',
+  'Messages': '#9333ea', 'Slash commands': '#0891b2',
 }
 // a category the palette does not know gets a hue hashed from its name: the same in every session
-const HUES = ['#f87171', '#fbbf24', '#a3e635', '#4ade80', '#22d3ee', '#818cf8', '#e879f9', '#fb7185']
+const HUES = ['#dc2626', '#d97706', '#65a30d', '#16a34a', '#0891b2', '#6366f1', '#c026d3', '#e11d48']
 const hashed = (name: string) => HUES[[...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % HUES.length]!
 export const colorOf = (name: string, kind: string) => PALETTE[name] ?? (kind === 'used' ? hashed(name) : '#4b5563')
 
@@ -70,6 +70,23 @@ export function windowBar(used: Row[], percent: number, width: number) {
   const sum = used.reduce((a, r) => a + r.tokens, 0) || 1
   const cells = barCells(used.map(r => ({ ...r, kind: 'part' })), sum, usedCells)
   return { cells, free: width - usedCells }
+}
+
+// shortcut: the left half of the footer row (permission mode + its hint) is not measurable from here, so a
+// fixed reserve; raise it if the bar still wraps beside a longer mode
+const FOOTER_RESERVE = 48
+const MIN_BAR = 6
+
+// what of the footer fits `columns`: the bar shrinks first, then the token count goes, then the bar;
+// the percent stays down to the narrowest terminal
+export function footerLayout(columns: number, modes: string, percent: string, tokens: string) {
+  const room = columns - FOOTER_RESERVE - (modes ? modes.length + 2 : 0)
+  const label = ` ${percent} ${tokens}`
+  const bar = (n: number) => Math.min(FOOTER_BAR, Math.max(0, n))
+  if (room - label.length >= MIN_BAR) return { bar: bar(room - label.length), label }
+  const pct = ` ${percent}`
+  if (room - pct.length >= MIN_BAR) return { bar: bar(room - pct.length), label: pct }
+  return { bar: 0, label: pct.trimStart() }
 }
 
 // summary = local estimate, no token-count API calls; refreshed after every turn
@@ -156,7 +173,9 @@ export const register: Register = on => {
     const { Box, Text } = $.ui.resolve(e)
     const inWindow = s.rows.filter(r => r.kind === 'used')
     const { tokens, window, percent } = s.live ?? { tokens: s.total, window: s.max, percent: s.percent }
-    const { cells, free } = windowBar(inWindow, percent, FOOTER_BAR)
+    const modes = e.props.modes.join(' & ')
+    const fit = footerLayout(e.viewport?.columns ?? 80, modes, `${percent}%`, `${fmt(tokens)}/${fmt(window)}`)
+    const { cells, free } = windowBar(inWindow, percent, fit.bar)
 
     // fullscreen: an absolute card floats over the transcript; the main screen clips it to the footer row,
     // so there the hover reveals the AbovePrompt band instead (same hover scope)
@@ -169,12 +188,14 @@ export const register: Register = on => {
             {compact(Box, Text, s)}
           </Box>
         )}
-        {e.props.modes.length > 0 && <Text dimColor>{e.props.modes.join(' & ')}  </Text>}
-        <Text>
-          {inWindow.map((r, i) => <Text color={r.color}>{'█'.repeat(cells[i]!)}</Text>)}
-          <Text color="#4b5563">{'░'.repeat(free)}</Text>
-        </Text>
-        <Text dimColor> {percent}% {fmt(tokens)}/{fmt(window)}</Text>
+        {modes && <Text dimColor wrap="truncate-end">{modes}  </Text>}
+        {fit.bar > 0 && (
+          <Text>
+            {inWindow.map((r, i) => <Text color={r.color}>{'█'.repeat(cells[i]!)}</Text>)}
+            <Text color="#4b5563">{'░'.repeat(free)}</Text>
+          </Text>
+        )}
+        <Text dimColor wrap="truncate-end">{fit.label}</Text>
       </Box>
     )
   })

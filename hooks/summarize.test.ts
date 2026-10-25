@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { barCells, colorOf, fmt, summarize, windowBar } from './register'
+import { barCells, colorOf, fmt, footerLayout, summarize, windowBar } from './register'
 
 const cat = (name: string, tokens: number, kind: string) => ({ name, tokens, color: 'x', isDeferred: kind === 'deferred', kind })
 
@@ -74,5 +74,15 @@ test('Messages takes the tool results the breakdown misses', () => {
 test('an unknown category always gets the same colour', () => {
   expect(colorOf('Plugin hooks', 'used')).toBe(colorOf('Plugin hooks', 'used'))
   expect(colorOf('Plugin hooks', 'used')).toMatch(/^#[0-9a-f]{6}$/)
-  expect(colorOf('Messages', 'used')).toBe('#c084fc')
+  expect(colorOf('Messages', 'used')).toBe('#9333ea')
+})
+
+test('footer shrinks to the terminal: bar, then token count, then bar again; never wider than the room', () => {
+  const at = (cols: number) => footerLayout(cols, '', '23%', '45k/1M')
+  expect(at(200)).toEqual({ bar: 15, label: ' 23% 45k/1M' })
+  expect(at(70).label).toBe(' 23% 45k/1M')
+  expect(at(60)).toEqual({ bar: 8, label: ' 23%' })
+  expect(at(50)).toEqual({ bar: 0, label: '23%' })
+  for (let c = 40; c <= 200; c++) { const f = at(c); expect(f.bar + f.label.length).toBeLessThanOrEqual(Math.max(c - 48, 3)) }
+  expect(footerLayout(90, 'Cursor · opus', '23%', '45k/1M').bar).toBeLessThan(at(90).bar)
 })
