@@ -84,5 +84,5 @@ test('footer shrinks to the terminal: bar, then token count, then bar again; nev
   expect(at(60)).toEqual({ bar: 8, label: ' 23%' })
   expect(at(50)).toEqual({ bar: 0, label: '23%' })
   for (let c = 40; c <= 200; c++) { const f = at(c); expect(f.bar + f.label.length).toBeLessThanOrEqual(Math.max(c - 48, 3)) }
-  expect(footerLayout(90, 'Cursor · opus', '23%', '45k/1M').bar).toBeLessThan(at(90).bar)
+  expect(footerLayout(70, 'Cursor · opus', '23%', '45k/1M').bar).toBeLessThan(at(70).bar)
 })
