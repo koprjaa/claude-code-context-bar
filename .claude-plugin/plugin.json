@@ -1,6 +1,6 @@
 {
   "name": "context-pane",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Context window usage bar for the Claude Code prompt footer",
   "author": {
     "name": "koprjaa"

@@ -75,19 +75,10 @@ export function windowBar(used: Row[], percent: number, width: number) {
 // shortcut: the left half of the footer row (permission mode + its hint) is not measurable from here, so a
 // fixed reserve; raise it if the bar still wraps beside a longer mode
 const FOOTER_RESERVE = 48
-const MIN_BAR = 6
 
-// what of the footer fits `columns`: the bar shrinks first, then the token count goes, then the bar;
-// the percent stays down to the narrowest terminal
-export function footerLayout(columns: number, modes: string, percent: string, tokens: string) {
-  const room = columns - FOOTER_RESERVE - (modes ? modes.length + 2 : 0)
-  const label = ` ${percent} ${tokens}`
-  const bar = (n: number) => Math.min(FOOTER_BAR, Math.max(0, n))
-  if (room - label.length >= MIN_BAR) return { bar: bar(room - label.length), label }
-  const pct = ` ${percent}`
-  if (room - pct.length >= MIN_BAR) return { bar: bar(room - pct.length), label: pct }
-  return { bar: 0, label: pct.trimStart() }
-}
+// the whole bar or none: where the row is too narrow the footer stays as the engine draws it
+export const footerFits = (columns: number, modes: string, label: string) =>
+  FOOTER_RESERVE + (modes ? modes.length + 2 : 0) + FOOTER_BAR + label.length <= columns
 
 // summary = local estimate, no token-count API calls; refreshed after every turn
 async function refresh($: EngineInterface) {
@@ -174,8 +165,9 @@ export const register: Register = on => {
     const inWindow = s.rows.filter(r => r.kind === 'used')
     const { tokens, window, percent } = s.live ?? { tokens: s.total, window: s.max, percent: s.percent }
     const modes = e.props.modes.join(' & ')
-    const fit = footerLayout(e.viewport?.columns ?? 80, modes, `${percent}%`, `${fmt(tokens)}/${fmt(window)}`)
-    const { cells, free } = windowBar(inWindow, percent, fit.bar)
+    const label = ` ${percent}% ${fmt(tokens)}/${fmt(window)}`
+    if (!footerFits(e.viewport?.columns ?? 80, modes, label)) return next(e)
+    const { cells, free } = windowBar(inWindow, percent, FOOTER_BAR)
 
     // fullscreen: an absolute card floats over the transcript; the main screen clips it to the footer row,
     // so there the hover reveals the AbovePrompt band instead (same hover scope)
@@ -188,14 +180,12 @@ export const register: Register = on => {
             {compact(Box, Text, s)}
           </Box>
         )}
-        {modes && <Text dimColor wrap="truncate-end">{modes}  </Text>}
-        {fit.bar > 0 && (
-          <Text>
-            {inWindow.map((r, i) => <Text color={r.color}>{'█'.repeat(cells[i]!)}</Text>)}
-            <Text color="#4b5563">{'░'.repeat(free)}</Text>
-          </Text>
-        )}
-        <Text dimColor wrap="truncate-end">{fit.label}</Text>
+        {modes && <Text dimColor>{modes}  </Text>}
+        <Text>
+          {inWindow.map((r, i) => <Text color={r.color}>{'█'.repeat(cells[i]!)}</Text>)}
+          <Text color="#4b5563">{'░'.repeat(free)}</Text>
+        </Text>
+        <Text dimColor>{label}</Text>
       </Box>
     )
   })

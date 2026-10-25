@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { barCells, colorOf, fmt, footerLayout, summarize, windowBar } from './register'
+import { barCells, colorOf, fmt, footerFits, summarize, windowBar } from './register'
 
 const cat = (name: string, tokens: number, kind: string) => ({ name, tokens, color: 'x', isDeferred: kind === 'deferred', kind })
 
@@ -77,12 +77,10 @@ test('an unknown category always gets the same colour', () => {
   expect(colorOf('Messages', 'used')).toBe('#9333ea')
 })
 
-test('footer shrinks to the terminal: bar, then token count, then bar again; never wider than the room', () => {
-  const at = (cols: number) => footerLayout(cols, '', '23%', '45k/1M')
-  expect(at(200)).toEqual({ bar: 15, label: ' 23% 45k/1M' })
-  expect(at(70).label).toBe(' 23% 45k/1M')
-  expect(at(60)).toEqual({ bar: 8, label: ' 23%' })
-  expect(at(50)).toEqual({ bar: 0, label: '23%' })
-  for (let c = 40; c <= 200; c++) { const f = at(c); expect(f.bar + f.label.length).toBeLessThanOrEqual(Math.max(c - 48, 3)) }
-  expect(footerLayout(70, 'Cursor · opus', '23%', '45k/1M').bar).toBeLessThan(at(70).bar)
+test('footer bar shows whole or not at all', () => {
+  const label = ' 23% 45k/1M'
+  expect(footerFits(200, '', label)).toBe(true)
+  expect(footerFits(48 + 15 + label.length, '', label)).toBe(true)
+  expect(footerFits(48 + 15 + label.length - 1, '', label)).toBe(false)
+  expect(footerFits(80, 'Cursor · opus', label)).toBe(false)
 })
